@@ -1,5 +1,5 @@
-def solution(height, converters):
-    if (height < 1 or height > 30):
+def solution(target_height, converters):
+    if (target_height < 1 or target_height > 30):
         print("Invalid height, please enter a height between 1 and 30")
         return
 
@@ -10,49 +10,42 @@ def solution(height, converters):
         return
     
     # Initialize a list to store the parent converters
-    parents = []
+    result_converters = []
 
-    original_h = height
+    root_height = target_height
 
     # Iterate over the converters in q
     for converter in converters:
         # The label of the root converter
-        root = 2 ** height - 1
-        print(f"Root: {root}")
+        root = 2 ** target_height - 1
 
         # If the converter is the root, it has no parent
         if converter == root:
-            parents.append(-1)
+            result_converters.append(-1)
             continue
 
-        # The label of the current parent converter
-        current_parent = root
+        target_root = root
 
-        # Find the parent converter
-        while height > 1:
-            # The label of the left and right child converters
-            left_child = current_parent - 2 ** (height - 1)
-            right_child = current_parent - 1
-            print(f"Current Parent: {current_parent}, Left Child: {left_child}, Right Child: {right_child}")
+        while target_height > 1:
+            # Calculate the left and right child of the current parent converter
+            left = target_root - 2 ** (target_height - 1)
+            right = target_root - 1
 
             # If the converter is a left or right child, we have found its parent
-            if converter == left_child or converter == right_child:
-                parents.append(current_parent)
+            if converter == left or converter == right:
+                result_converters.append(target_root)
                 break
 
-            # If the converter is in the left subtree, move to the left
-            if converter < left_child:
-                current_parent = left_child
-            # If the converter is in the right subtree, move to the right
+            if converter < left:
+                target_root = left
             else:
-                current_parent = right_child
+                target_root = right
 
-            height -= 1
+            target_height -= 1
 
-        height = original_h
+        target_height = root_height
 
-    # Return the parent converters
-    return parents
+    return result_converters
 
 
 print(solution(5, [19, 14, 28]))
