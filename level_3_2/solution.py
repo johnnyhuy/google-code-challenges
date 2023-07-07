@@ -1,85 +1,110 @@
 from fractions import Fraction
 from functools import reduce
 
-def greatest_common_divisor(a, b):
+
+def lcm(a, b):
+    """Compute the least common multiple of a and b"""
+    return a * b // gcd(a, b)
+
+
+def gcd(a, b):
+    """Compute the greatest common divisor of a and b"""
     while b:
         a, b = b, a % b
     return a
 
-def least_common_multiple(a, b):
-    return a * b // greatest_common_divisor(a, b)
 
-def convert_to_probabilities(matrix):
-    number_of_states = len(matrix)
-    terminal_states = []
-    
-    for state, row in enumerate(matrix):
-        row_sum = sum(row)
+def matmult(a, b):
+    """Multiply two matrices"""
+    zip_b = list(zip(*b))
+    return [
+        [sum(ele_a * ele_b for ele_a, ele_b in zip(row_a, col_b)) for col_b in zip_b]
+        for row_a in a
+    ]
 
-        if row_sum == 0:
-            terminal_states.append(state)
-            continue
-        for transition in range(number_of_states):
-            matrix[state][transition] = Fraction(matrix[state][transition], row_sum)
 
-    return terminal_states
+def transposeMatrix(m):
+    """Transpose a matrix"""
+    return list(map(list, zip(*m)))
 
-def create_identity_matrix(size):
-    identity_matrix = []
 
-    for i in range(size):
-        row = [1 if i == j else 0 for j in range(size)]
-        identity_matrix.append(row)
+def getMatrixMinor(m, i, j):
+    """Get the minor of a matrix element"""
+    return [row[:j] + row[j + 1 :] for row in (m[:i] + m[i + 1 :])]
 
-    return identity_matrix
 
-def subtract_matrices(matrix1, matrix2):
-    size = len(matrix1)
-    result_matrix = [[matrix1[i][j] - matrix2[i][j] for j in range(size)] for i in range(size)]
+def getMatrixDeternminant(m):
+    """Calculate the determinant of a matrix"""
+    # base case for 2x2 matrix
+    if len(m) == 2:
+        return m[0][0] * m[1][1] - m[0][1] * m[1][0]
 
-    return result_matrix
+    determinant = 0
+    for c in range(len(m)):
+        determinant += (
+            ((-1) ** c) * m[0][c] * getMatrixDeternminant(getMatrixMinor(m, 0, c))
+        )
+    return determinant
 
-def invert_matrix(matrix):
-    size = len(matrix)
-    inverted_matrix = create_identity_matrix(size)
 
-    for index in range(size):
-        denominator = matrix[index][index]
+def inverse_matrix(m):
+    """Calculate the inverse of a matrix"""
+    determinant = getMatrixDeternminant(m)
+    # special case for 2x2 matrix:
+    if len(m) == 2:
+        return [
+            [m[1][1] / determinant, -1 * m[0][1] / determinant],
+            [-1 * m[1][0] / determinant, m[0][0] / determinant],
+        ]
 
-        for j in range(size):
-            matrix[index][j] /= denominator
-            inverted_matrix[index][j] /= denominator
+    # find matrix of cofactors
+    cofactors = []
+    for r in range(len(m)):
+        cofactorRow = []
+        for c in range(len(m)):
+            minor = getMatrixMinor(m, r, c)
+            cofactorRow.append(((-1) ** (r + c)) * getMatrixDeternminant(minor))
+        cofactors.append(cofactorRow)
+    cofactors = transposeMatrix(cofactors)
+    for r in range(len(cofactors)):
+        for c in range(len(cofactors)):
+            cofactors[r][c] = cofactors[r][c] / determinant
+    return cofactors
 
-        for j in range(size):
-            if index != j:
-                coef = matrix[j][index]
-                for k in range(size):
-                    matrix[j][k] -= coef * matrix[index][k]
-                    inverted_matrix[j][k] -= coef * inverted_matrix[index][k]
 
-    return inverted_matrix
+def solution(m):
+    # Get list of terminal states
+    terminal_states = [i for i, row in enumerate(m) if sum(row) == 0]
+    if not terminal_states:
+        return [1] + [0] * (len(m) - 1) + [1]
 
-def multiply_matrices(matrix1, matrix2):
-    result_matrix = []
+    # Convert the matrix to fractions
+    for i, row in enumerate(m):
+        s = sum(row)
+        if s > 0:
+            m[i] = [Fraction(n, s) for n in row]
 
-    for i in range(len(matrix1)):
-        row = [sum(matrix1[i][k]*matrix2[k][j] for k in range(len(matrix2))) for j in range(len(matrix2[0]))]
-        result_matrix.append(row)
+    # Reorder the matrix
+    states = terminal_states + [i for i in range(len(m)) if i not in terminal_states]
+    m = [[m[i][j] for j in states] for i in states]
 
-    return result_matrix
+    # Split the matrix into Q and R
+    n = len(terminal_states)
+    Q = [row[n:] for row in m[n:]]
+    R = [row[:n] for row in m[n:]]
 
-def solution(matrix):
-    terminal_states = convert_to_probabilities(matrix)
-    non_terminal_states = [state for state in range(len(matrix)) if state not in terminal_states]
-    Q_matrix = [[matrix[i][j] for j in non_terminal_states] for i in non_terminal_states]
-    R_matrix = [[matrix[i][j] for j in terminal_states] for i in non_terminal_states]
-    identity_matrix = create_identity_matrix(len(Q_matrix))
-    I_minus_Q_matrix = subtract_matrices(identity_matrix, Q_matrix)
-    F_matrix = invert_matrix(I_minus_Q_matrix)
-    FR_matrix = multiply_matrices(F_matrix, R_matrix)
-    denominators = [fraction.denominator for fraction in FR_matrix[0]]
-    common_denominator = reduce(least_common_multiple, denominators)
-    result = [fraction.numerator * common_denominator // fraction.denominator for fraction in FR_matrix[0]]
-    result.append(common_denominator)
+    # Calculate FR = (I-Q)^-1 * R
+    I = [[int(i == j) for j in range(len(Q))] for i in range(len(Q))]
+    IQ = [[a - b for a, b in zip(I_row, Q_row)] for I_row, Q_row in zip(I, Q)]
+    F = inverse_matrix(IQ)
+    FR = matmult(F, R)
 
-    return result
+    # The probabilities are the first row of FR
+    probabilities = FR[0]
+
+    # Convert to the required output format
+    denominator = reduce(lcm, [f.denominator for f in probabilities])
+    probabilities = [f.numerator * denominator // f.denominator for f in probabilities]
+    probabilities.append(denominator)
+
+    return probabilities
