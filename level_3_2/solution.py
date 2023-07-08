@@ -23,17 +23,17 @@ def matmult(a, b):
     ]
 
 
-def transposeMatrix(m):
+def transpose_matrix(m):
     """Transpose a matrix"""
     return list(map(list, zip(*m)))
 
 
-def getMatrixMinor(m, i, j):
+def get_matrix_minor(m, i, j):
     """Get the minor of a matrix element"""
     return [row[:j] + row[j + 1 :] for row in (m[:i] + m[i + 1 :])]
 
 
-def getMatrixDeternminant(m):
+def get_matrix_deternminant(m):
     """Calculate the determinant of a matrix"""
     # base case for 2x2 matrix
     if len(m) == 2:
@@ -42,14 +42,19 @@ def getMatrixDeternminant(m):
     determinant = 0
     for c in range(len(m)):
         determinant += (
-            ((-1) ** c) * m[0][c] * getMatrixDeternminant(getMatrixMinor(m, 0, c))
+            ((-1) ** c) * m[0][c] * get_matrix_deternminant(get_matrix_minor(m, 0, c))
         )
     return determinant
 
 
 def inverse_matrix(m):
     """Calculate the inverse of a matrix"""
-    determinant = getMatrixDeternminant(m)
+
+    determinant = get_matrix_deternminant(m)
+
+    if determinant == 0:
+        raise ValueError("Matrix is singular and cannot be inverted")
+
     # special case for 2x2 matrix:
     if len(m) == 2:
         return [
@@ -62,10 +67,10 @@ def inverse_matrix(m):
     for r in range(len(m)):
         cofactorRow = []
         for c in range(len(m)):
-            minor = getMatrixMinor(m, r, c)
-            cofactorRow.append(((-1) ** (r + c)) * getMatrixDeternminant(minor))
+            minor = get_matrix_minor(m, r, c)
+            cofactorRow.append(((-1) ** (r + c)) * get_matrix_deternminant(minor))
         cofactors.append(cofactorRow)
-    cofactors = transposeMatrix(cofactors)
+    cofactors = transpose_matrix(cofactors)
     for r in range(len(cofactors)):
         for c in range(len(cofactors)):
             cofactors[r][c] = cofactors[r][c] / determinant
@@ -96,7 +101,13 @@ def solution(m):
     # Calculate FR = (I-Q)^-1 * R
     I = [[int(i == j) for j in range(len(Q))] for i in range(len(Q))]
     IQ = [[a - b for a, b in zip(I_row, Q_row)] for I_row, Q_row in zip(I, Q)]
-    F = inverse_matrix(IQ)
+
+    try:
+        F = inverse_matrix(IQ)
+    except ValueError as e:
+        print(e)
+        return None
+
     FR = matmult(F, R)
 
     # The probabilities are the first row of FR
