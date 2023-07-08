@@ -33,7 +33,7 @@ def get_matrix_minor(m, i, j):
     return [row[:j] + row[j + 1 :] for row in (m[:i] + m[i + 1 :])]
 
 
-def get_matrix_deternminant(m):
+def get_matrix_determinant(m):
     """Calculate the determinant of a matrix"""
     # base case for 2x2 matrix
     if len(m) == 2:
@@ -42,7 +42,7 @@ def get_matrix_deternminant(m):
     determinant = 0
     for c in range(len(m)):
         determinant += (
-            ((-1) ** c) * m[0][c] * get_matrix_deternminant(get_matrix_minor(m, 0, c))
+            ((-1) ** c) * m[0][c] * get_matrix_determinant(get_matrix_minor(m, 0, c))
         )
     return determinant
 
@@ -50,7 +50,7 @@ def get_matrix_deternminant(m):
 def inverse_matrix(m):
     """Calculate the inverse of a matrix"""
 
-    determinant = get_matrix_deternminant(m)
+    determinant = get_matrix_determinant(m)
 
     if determinant == 0:
         raise ValueError("Matrix is singular and cannot be inverted")
@@ -65,11 +65,11 @@ def inverse_matrix(m):
     # find matrix of cofactors
     cofactors = []
     for r in range(len(m)):
-        cofactorRow = []
+        cofactor_row = []
         for c in range(len(m)):
             minor = get_matrix_minor(m, r, c)
-            cofactorRow.append(((-1) ** (r + c)) * get_matrix_deternminant(minor))
-        cofactors.append(cofactorRow)
+            cofactor_row.append(((-1) ** (r + c)) * get_matrix_determinant(minor))
+        cofactors.append(cofactor_row)
     cofactors = transpose_matrix(cofactors)
     for r in range(len(cofactors)):
         for c in range(len(cofactors)):
@@ -78,10 +78,14 @@ def inverse_matrix(m):
 
 
 def solution(m):
+    # Check if the matrix is square
+    if len(m) != len(m[0]):
+        return None
+
     # Get list of terminal states
     terminal_states = [i for i, row in enumerate(m) if sum(row) == 0]
     if not terminal_states:
-        return [1] + [0] * (len(m) - 1) + [1]
+        return [1] * len(m)
 
     # Convert the matrix to fractions
     for i, row in enumerate(m):
