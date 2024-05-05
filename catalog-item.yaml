@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: google-code-challenges
+  title: Google Code Challenges
+  description: Google Code Challenges is a collection of code challenges from Google
+  tags:
+    - python
+spec:
+  type: library
+  lifecycle: experimental
+  owner: johnnyhuy
